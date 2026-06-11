@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "src/fase2_broken_tests",
+    "src/__tests__/fase3",
+    "src/__tests__/fase4"
+  ]
+}

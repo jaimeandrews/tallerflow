@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tallerflow_marcaje_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tallerflow
+      POSTGRES_PASSWORD: tallerflow_dev_2024
+      POSTGRES_DB: tallerflow_marcaje
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+    driver: local

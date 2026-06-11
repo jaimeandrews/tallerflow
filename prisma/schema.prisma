@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum RolUsuario {
+  ADMIN
+  GERENTE_SUCURSAL
+  JEFE_TALLER
+  COORDINADOR
+  TECNICO
+  CONTROL_GESTION
+}
+
+enum EstadoOF {
+  PENDIENTE
+  EN_PROCESO
+  PAUSADA
+  ESPERA_REPUESTO
+  FINALIZADA
+}
+
+enum PrioridadOF {
+  CRITICA
+  ALTA
+  MEDIA
+  BAJA
+}
+
+enum EstadoTecnico {
+  TRABAJANDO
+  PAUSA
+  ALMUERZO
+  DETENIDO
+  DISPONIBLE
+}
+
+enum TipoMarcaje {
+  INICIO
+  FIN
+  PAUSA
+  REANUDACION
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Sucursal {
+  id        String   @id @default(uuid())
+  nombre    String   @unique
+  codigo    String   @unique
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  usuarios         Usuario[]
+  ordenesTrabajo   OrdenTrabajo[]
+  marcajes         Marcaje[]
+  actividades      Actividad[]
+  turnos           Turno[]
+  configuracionSla ConfiguracionSLA[]
+  alertas          Alerta[]
+
+  @@map("sucursales")
+}
+
+model Usuario {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  nombre       String
+  apellido     String
+  rut          String?    @unique
+  pin          String?
+  iniciales    String     @db.VarChar(3)
+  rol          RolUsuario
+  sucursalId   String     @map("sucursal_id")
+  activo       Boolean    @default(true)
+  color        String     @default("#006FA0")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  sucursal         Sucursal              @relation(fields: [sucursalId], references: [id])
+  especialidades   UsuarioEspecialidad[]
+  asignaciones     AsignacionTecnico[]
+  marcajes         Marcaje[]
+  alertasResueltas Alerta[]              @relation("AlertaResueltaPor")
+  auditoria        LogAuditoria[]
+
+  @@index([sucursalId])
+  @@map("usuarios")
+}
+
+model Especialidad {
+  id        String   @id @default(uuid())
+  nombre    String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usuarios UsuarioEspecialidad[]
+
+  @@map("especialidades")
+}
+
+model UsuarioEspecialidad {
+  usuarioId      String @map("usuario_id")
+  especialidadId String @map("especialidad_id")
+
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id])
+  especialidad Especialidad @relation(fields: [especialidadId], references: [id])
+
+  @@id([usuarioId, especialidadId])
+  @@map("usuario_especialidades")
+}
+
+model Actividad {
+  id         String   @id @default(uuid())
+  nombre     String
+  icono      String?
+  color      String
+  productiva Boolean
+  activa     Boolean  @default(true)
+  sucursalId String?  @map("sucursal_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  sucursal Sucursal? @relation(fields: [sucursalId], references: [id])
+  marcajes Marcaje[]
+
+  @@index([sucursalId])
+  @@map("actividades")
+}
+
+model Turno {
+  id         String   @id @default(uuid())
+  nombre     String
+  horaInicio String   @map("hora_inicio")
+  horaFin    String   @map("hora_fin")
+  sucursalId String   @map("sucursal_id")
+  activo     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  sucursal Sucursal  @relation(fields: [sucursalId], references: [id])
+  marcajes Marcaje[]
+
+  @@index([sucursalId])
+  @@map("turnos")
+}
+
+model OrdenTrabajo {
+  id                 String      @id @default(uuid())
+  numero             String      @unique
+  proyecto           String
+  nombre             String
+  cliente            String
+  equipo             String
+  estado             EstadoOF    @default(PENDIENTE)
+  prioridad          PrioridadOF @default(MEDIA)
+  sucursalId         String      @map("sucursal_id")
+  hhEstimadas        Float       @map("hh_estimadas")
+  hhConsumidas       Float       @default(0) @map("hh_consumidas")
+  slaVencimiento     DateTime?   @map("sla_vencimiento")
+  critica            Boolean     @default(false)
+  tecnicosRequeridos Int         @default(1) @map("tecnicos_requeridos")
+  eliminada          Boolean     @default(false)
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  sucursal     Sucursal            @relation(fields: [sucursalId], references: [id])
+  asignaciones AsignacionTecnico[]
+  marcajes     Marcaje[]
+
+  @@index([sucursalId])
+  @@index([estado])
+  @@index([eliminada])
+  @@index([sucursalId, estado])
+  @@index([sucursalId, critica])
+  @@map("ordenes_trabajo")
+}
+
+model AsignacionTecnico {
+  id              String   @id @default(uuid())
+  ordenTrabajoId  String   @map("orden_trabajo_id")
+  usuarioId       String   @map("usuario_id")
+  hhPlanificadas  Float    @default(0) @map("hh_planificadas")
+  fechaAsignacion DateTime @default(now()) @map("fecha_asignacion")
+  activa          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  ordenTrabajo OrdenTrabajo @relation(fields: [ordenTrabajoId], references: [id])
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id])
+
+  @@unique([ordenTrabajoId, usuarioId])
+  @@index([usuarioId])
+  @@index([usuarioId, activa])
+  @@map("asignaciones_tecnicos")
+}
+
+model Marcaje {
+  id              String      @id @default(uuid())
+  usuarioId       String      @map("usuario_id")
+  ordenTrabajoId  String?     @map("orden_trabajo_id")
+  actividadId     String      @map("actividad_id")
+  tipo            TipoMarcaje
+  horaInicio      DateTime    @map("hora_inicio")
+  horaFin         DateTime?   @map("hora_fin")
+  duracionMinutos Float?      @map("duracion_minutos")
+  sucursalId      String      @map("sucursal_id")
+  turnoId         String?     @map("turno_id")
+  dispositivo     String?
+  sincronizado    Boolean     @default(true)
+  creadoOffline   Boolean     @default(false) @map("creado_offline")
+  idOffline       String?     @unique @map("id_offline")
+  notas           String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id])
+  ordenTrabajo OrdenTrabajo? @relation(fields: [ordenTrabajoId], references: [id])
+  actividad    Actividad     @relation(fields: [actividadId], references: [id])
+  sucursal     Sucursal      @relation(fields: [sucursalId], references: [id])
+  turno        Turno?        @relation(fields: [turnoId], references: [id])
+
+  @@index([usuarioId, horaInicio])
+  @@index([ordenTrabajoId, horaInicio])
+  @@index([sucursalId, horaInicio])
+  @@index([actividadId])
+  @@map("marcajes")
+}
+
+model ConfiguracionSLA {
+  id            String   @id @default(uuid())
+  sucursalId    String   @map("sucursal_id")
+  nombre        String
+  descripcion   String?
+  condicion     String
+  umbralMinutos Int      @map("umbral_minutos")
+  nivelAlerta   String   @map("nivel_alerta")
+  activa        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sucursal Sucursal @relation(fields: [sucursalId], references: [id])
+  alertas  Alerta[]
+
+  @@index([sucursalId])
+  @@map("configuraciones_sla")
+}
+
+model Alerta {
+  id                 String    @id @default(uuid())
+  configuracionSlaId String?   @map("configuracion_sla_id")
+  sucursalId         String    @map("sucursal_id")
+  titulo             String
+  descripcion        String
+  nivel              String
+  resuelta           Boolean   @default(false)
+  resueltaPorId      String?   @map("resuelta_por_id")
+  resueltaEn         DateTime? @map("resuelta_en")
+  datos              String?
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  configuracionSla ConfiguracionSLA? @relation(fields: [configuracionSlaId], references: [id])
+  sucursal         Sucursal          @relation(fields: [sucursalId], references: [id])
+  resueltaPor      Usuario?          @relation("AlertaResueltaPor", fields: [resueltaPorId], references: [id])
+
+  @@index([sucursalId])
+  @@index([sucursalId, resuelta])
+  @@map("alertas")
+}
+
+model LogAuditoria {
+  id              String   @id @default(uuid())
+  usuarioId       String?  @map("usuario_id")
+  accion          String
+  entidad         String
+  entidadId       String?  @map("entidad_id")
+  datosAnteriores String?  @map("datos_anteriores")
+  datosNuevos     String?  @map("datos_nuevos")
+  ip              String?
+  dispositivo     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@index([usuarioId, createdAt])
+  @@index([createdAt])
+  @@index([entidad, entidadId])
+  @@map("log_auditoria")
+}

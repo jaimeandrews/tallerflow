@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+/* ── shadcn/ui CSS variables (Tailwind v4 requires explicit --color-* mapping) ──
+ *
+ * Tailwind v4 resolves `bg-popover` → `var(--color-popover)` → `var(--popover)`.
+ * Without these definitions the tokens resolve to "transparent".
+ *
+ * Design tokens aligned with the TallerFlow brand palette:
+ *   Primary action: #006FA0 (used inline via Tailwind arbitrary values)
+ *   Surfaces:       white / slate-50 (light), slate-900 (kiosco dark shell)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Base */
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Card / paper surfaces */
+  --card: #ffffff;
+  --card-foreground: #171717;
+
+  /* Popover (DropdownMenu, SelectContent, Tooltip, etc.) */
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+
+  /* Primary (neutral dark — explicit TallerFlow blue is applied inline) */
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+
+  /* Secondary */
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+
+  /* Muted / subdued */
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+
+  /* Accent (hover bg on menu items, sidebar active, etc.) */
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+
+  /* Destructive */
+  --destructive: #ef4444;
+
+  /* Form / structural */
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #a3a3a3;
+}
+
+/* ── Dark mode — activado por la clase .dark en <html> ───────────────────────
+ * Se aplica cuando:
+ *   a) El usuario activa el toggle manual en el topbar (guarda en localStorage)
+ *   b) La preferencia del sistema es dark Y no hay preferencia guardada
+ *      (el script inline en layout.tsx aplica la clase antes del primer render)
+ * ─────────────────────────────────────────────────────────────────────────── */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+
+  --card: #0f0f0f;
+  --card-foreground: #ededed;
+
+  --popover: #1a1a1a;
+  --popover-foreground: #ededed;
+
+  --primary: #ededed;
+  --primary-foreground: #1a1a1a;
+
+  --secondary: #262626;
+  --secondary-foreground: #ededed;
+
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+
+  --accent: #262626;
+  --accent-foreground: #ededed;
+
+  --destructive: #ef4444;
+
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #525252;
+}
+
+/* ── Tailwind v4 color mapping ───────────────────────────────────────────────
+ * Maps CSS variables to the Tailwind color utility namespace so that classes
+ * like `bg-popover`, `text-muted-foreground`, `border-border`, `ring-ring`
+ * resolve correctly instead of defaulting to transparent.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* ── Body defaults ─────────────────────────────────────────────────────────── */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ── PIN keypad shake animation ────────────────────────────────────────────── */
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-8px);
+  }
+  30% {
+    transform: translateX(8px);
+  }
+  45% {
+    transform: translateX(-6px);
+  }
+  60% {
+    transform: translateX(6px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+  90% {
+    transform: translateX(3px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* ── Modo NOC (centro de control fullscreen) ────────────────────────────────
+ * Activado por NocModeProvider (clase `tallerflow-noc-mode` en <body>).
+ * Oculta sidebar y topbar; el contenido queda flush al borde.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+body.tallerflow-noc-mode aside {
+  display: none !important;
+}
+body.tallerflow-noc-mode [data-tallerflow-shell] {
+  padding-left: 0 !important;
+}
+body.tallerflow-noc-mode [data-tallerflow-topbar] {
+  display: none !important;
+}
+body.tallerflow-noc-mode main {
+  background: transparent;
+}
