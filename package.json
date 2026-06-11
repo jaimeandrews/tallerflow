@@ -6,6 +6,7 @@
     "dev": "tsx watch server.ts",
     "dev:next-only": "next dev --webpack",
     "build": "next build --webpack",
+    "postinstall": "prisma generate",
     "start": "cross-env NODE_ENV=production tsx server.ts",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
