@@ -12,6 +12,9 @@ SaaS de control de tiempos y productividad para talleres industriales (demo de p
 | Kiosco técnico | PIN 1234 |
 
 > Datos de demostración. La base se puede reiniciar sin aviso.
+>
+> <img width="1895" height="957" alt="image" src="https://github.com/user-attachments/assets/defe3938-7b77-466b-8c19-cb1180536ecf" />
+
 
 ## Stack
 
