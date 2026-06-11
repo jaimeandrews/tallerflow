@@ -27,7 +27,7 @@ import { initSocketServer } from "./src/lib/socket/socket-server";
 import { startAlertasScheduler } from "./src/lib/services/alerta-service";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = process.env.HOSTNAME ?? "localhost";
+const hostname = process.env.HOST ?? (dev ? "localhost" : "0.0.0.0");
 const port = Number(process.env.PORT ?? 3000);
 
 // `turbopack: false` fuerza el bundler webpack en dev — ya en uso en este
