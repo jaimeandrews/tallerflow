@@ -2,6 +2,17 @@
 
 SaaS de control de tiempos y productividad para talleres industriales (demo de portafolio)
 
+## 🔗 Demo en vivo
+
+**[tallerflow-production.up.railway.app](https://tallerflow-production.up.railway.app)**
+
+| Acceso | Credencial |
+|---|---|
+| Admin | admin@tallerflow.cl / admin123 |
+| Kiosco técnico | PIN 1234 |
+
+> Datos de demostración. La base se puede reiniciar sin aviso.
+
 ## Stack
 
 - **Framework:** Next.js 15 (App Router) + React 19 + TypeScript
