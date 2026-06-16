@@ -1,6 +1,8 @@
 import { type NextRequest } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
-import { getAuthUser } from "@/lib/auth/api-auth";
+import { getAuthUser, getClientIp } from "@/lib/auth/api-auth";
+import { registrarAuditoria } from "@/lib/services/auditoria-service";
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser(request);
@@ -72,4 +74,53 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "private, max-age=300" },
     }
   );
+}
+
+const createSchema = z.object({
+  nombre: z.string().min(1).max(100),
+  codigo: z.string().min(1).max(10),
+  activa: z.boolean().optional().default(true),
+});
+
+export async function POST(request: NextRequest) {
+  const user = await getAuthUser(request);
+  if (!user) return Response.json({ error: "No autorizado" }, { status: 401 });
+  if (user.rol !== "ADMIN")
+    return Response.json({ error: "Solo ADMIN puede gestionar sucursales" }, { status: 403 });
+
+  const body = await request.json();
+  const parsed = createSchema.safeParse(body);
+  if (!parsed.success)
+    return Response.json(
+      { error: "Datos inválidos", issues: parsed.error.issues },
+      { status: 400 }
+    );
+
+  const { nombre, codigo, activa } = parsed.data;
+  const codigoUpper = codigo.trim().toUpperCase();
+
+  const conflicto = await prisma.sucursal.findFirst({
+    where: { OR: [{ nombre: nombre.trim() }, { codigo: codigoUpper }] },
+    select: { nombre: true, codigo: true },
+  });
+  if (conflicto) {
+    const campo = conflicto.nombre === nombre.trim() ? "nombre" : "código";
+    return Response.json({ error: `Ya existe una sucursal con ese ${campo}` }, { status: 409 });
+  }
+
+  const sucursal = await prisma.sucursal.create({
+    data: { nombre: nombre.trim(), codigo: codigoUpper, activa },
+    select: { id: true, nombre: true, codigo: true, activa: true, createdAt: true },
+  });
+
+  void registrarAuditoria({
+    usuarioId: user.id,
+    accion: "CREAR_SUCURSAL",
+    entidad: "Sucursal",
+    entidadId: sucursal.id,
+    datosNuevos: sucursal,
+    ip: getClientIp(request),
+  });
+
+  return Response.json({ sucursal }, { status: 201 });
 }

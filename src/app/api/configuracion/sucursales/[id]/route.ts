@@ -93,3 +93,55 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   return Response.json({ sucursal, warnings });
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getAuthUser(request);
+  if (!user) return Response.json({ error: "No autorizado" }, { status: 401 });
+  if (user.rol !== "ADMIN")
+    return Response.json({ error: "Solo ADMIN puede gestionar sucursales" }, { status: 403 });
+
+  const { id } = await params;
+
+  const existente = await prisma.sucursal.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      nombre: true,
+      codigo: true,
+      _count: { select: { usuarios: true, ordenesTrabajo: true } },
+    },
+  });
+  if (!existente) return Response.json({ error: "Sucursal no encontrada" }, { status: 404 });
+
+  if (existente._count.usuarios > 0 || existente._count.ordenesTrabajo > 0) {
+    const partes: string[] = [];
+    if (existente._count.usuarios > 0)
+      partes.push(
+        `${existente._count.usuarios} usuario${existente._count.usuarios !== 1 ? "s" : ""}`
+      );
+    if (existente._count.ordenesTrabajo > 0)
+      partes.push(
+        `${existente._count.ordenesTrabajo} orden${existente._count.ordenesTrabajo !== 1 ? "es" : ""} de trabajo`
+      );
+    return Response.json(
+      { error: `No se puede eliminar: tiene ${partes.join(" y ")} asociados` },
+      { status: 409 }
+    );
+  }
+
+  await prisma.sucursal.delete({ where: { id } });
+
+  void registrarAuditoria({
+    usuarioId: user.id,
+    accion: "ELIMINAR_SUCURSAL",
+    entidad: "Sucursal",
+    entidadId: id,
+    datosAnteriores: { nombre: existente.nombre, codigo: existente.codigo },
+    ip: getClientIp(request),
+  });
+
+  return new Response(null, { status: 204 });
+}

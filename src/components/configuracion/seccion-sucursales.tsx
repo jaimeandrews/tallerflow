@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Pencil, HardHat, ClipboardList, ClipboardCheck } from "lucide-react";
+import { Pencil, HardHat, ClipboardList, ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Sucursal {
@@ -120,6 +120,7 @@ export function SeccionSucursales() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<Sucursal | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const fetchSucursales = useCallback(async () => {
     setLoading(true);
@@ -137,6 +138,7 @@ export function SeccionSucursales() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSucursales();
   }, [fetchSucursales]);
 
@@ -145,11 +147,21 @@ export function SeccionSucursales() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h2 className="text-lg font-semibold text-slate-800">Sucursales</h2>
-        <p className="text-sm text-slate-500 mt-0.5">
-          {sucursales.length} sucursales · {activas} activas
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800">Sucursales</h2>
+          <p className="text-sm text-slate-500 mt-0.5">
+            {sucursales.length} sucursales · {activas} activas
+          </p>
+        </div>
+        <Button
+          size="sm"
+          className="bg-[#006FA0] hover:bg-[#005a82] text-white shrink-0"
+          onClick={() => setShowCreate(true)}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Nueva sucursal
+        </Button>
       </div>
 
       {/* Content */}
@@ -171,6 +183,17 @@ export function SeccionSucursales() {
         </div>
       )}
 
+      {/* Create dialog */}
+      {showCreate && (
+        <DialogCrearSucursal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            fetchSucursales();
+          }}
+        />
+      )}
+
       {/* Edit dialog */}
       {editItem && (
         <DialogEditarSucursal
@@ -183,6 +206,115 @@ export function SeccionSucursales() {
         />
       )}
     </div>
+  );
+}
+
+// ── Create dialog ─────────────────────────────────────────────────────────────
+
+interface DialogCrearProps {
+  onClose: () => void;
+  onCreated: () => void;
+}
+
+function DialogCrearSucursal({ onClose, onCreated }: DialogCrearProps) {
+  const [form, setForm] = useState({ nombre: "", codigo: "", activa: true });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/configuracion/sucursales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: form.nombre.trim(),
+          codigo: form.codigo.trim().toUpperCase(),
+          activa: form.activa,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Error al crear");
+        return;
+      }
+      toast.success("Sucursal creada");
+      onCreated();
+    } catch {
+      setError("Error de conexión");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Nueva sucursal</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-1">
+          <div>
+            <label className="text-xs font-medium text-slate-600">Nombre *</label>
+            <Input
+              value={form.nombre}
+              onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
+              required
+              className="mt-1"
+              placeholder="Ej: Puerto Montt"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600">Código *</label>
+            <Input
+              value={form.codigo}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, codigo: e.target.value.toUpperCase().slice(0, 10) }))
+              }
+              required
+              maxLength={10}
+              className="mt-1 font-mono uppercase"
+              placeholder="Ej: PMO"
+            />
+          </div>
+          <div className="flex items-start gap-3 py-1">
+            <Checkbox
+              id="crear-activa"
+              checked={form.activa}
+              onCheckedChange={(v) => setForm((p) => ({ ...p, activa: !!v }))}
+              className="mt-0.5"
+            />
+            <div>
+              <label
+                htmlFor="crear-activa"
+                className="text-sm text-slate-700 font-medium cursor-pointer"
+              >
+                Sucursal activa
+              </label>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Las sucursales inactivas no aparecen en la selección de nuevos usuarios.
+              </p>
+            </div>
+          </div>
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          <DialogFooter className="mt-2 pt-3 border-t">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-[#006FA0] hover:bg-[#005a82] text-white"
+            >
+              {saving ? "Creando..." : "Crear sucursal"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -201,8 +333,35 @@ function DialogEditarSucursal({ sucursal, onClose, onUpdated }: DialogEditarProp
     activa: sucursal.activa,
   });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+
+  const canDelete = sucursal.totalUsuarios === 0 && sucursal.totalOF === 0;
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/configuracion/sucursales/${sucursal.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Error al eliminar");
+        setConfirmDelete(false);
+        return;
+      }
+      toast.success("Sucursal eliminada");
+      onUpdated();
+    } catch {
+      setError("Error de conexión");
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,17 +489,68 @@ function DialogEditarSucursal({ sucursal, onClose, onUpdated }: DialogEditarProp
 
           {error && <p className="text-xs text-red-600">{error}</p>}
 
-          <DialogFooter className="mt-2 pt-3 border-t">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={saving}
-              className="bg-[#006FA0] hover:bg-[#005a82] text-white"
-            >
-              {saving ? "Guardando..." : "Guardar cambios"}
-            </Button>
+          <DialogFooter className="mt-2 pt-3 border-t flex-col gap-2 sm:flex-row sm:justify-between">
+            {/* Delete section */}
+            {!confirmDelete ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saving || deleting || !canDelete}
+                title={
+                  !canDelete
+                    ? `No se puede eliminar: tiene ${sucursal.totalUsuarios > 0 ? `${sucursal.totalUsuarios} usuario(s)` : ""}${sucursal.totalUsuarios > 0 && sucursal.totalOF > 0 ? " y " : ""}${sucursal.totalOF > 0 ? `${sucursal.totalOF} OF` : ""} asociados`
+                    : "Eliminar sucursal"
+                }
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Eliminar
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-700 font-medium">¿Confirmar eliminación?</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={deleting}
+                  className="bg-red-600 hover:bg-red-700 text-white h-7 text-xs"
+                  onClick={handleDelete}
+                >
+                  {deleting ? "Eliminando..." : "Sí, eliminar"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={deleting}
+                  className="h-7 text-xs"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  No
+                </Button>
+              </div>
+            )}
+
+            {/* Save / Cancel */}
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={saving || deleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving || deleting}
+                className="bg-[#006FA0] hover:bg-[#005a82] text-white"
+              >
+                {saving ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
