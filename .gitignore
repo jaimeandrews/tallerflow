@@ -62,3 +62,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /tests/e2e/fixtures/.auth/
+
+# Claude Code (config local)
+.claude/

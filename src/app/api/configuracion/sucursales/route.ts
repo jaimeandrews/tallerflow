@@ -68,10 +68,14 @@ export async function GET(request: NextRequest) {
 
   // private: ADMIN-only endpoint with live counts; not safe for CDN
   // max-age=300: counts (usuarios, OF) can tolerate 5-min staleness in the config UI
+  // Vary: la respuesta depende del usuario autenticado (200 vs 403 según rol)
   return Response.json(
     { data },
     {
-      headers: { "Cache-Control": "private, max-age=300" },
+      headers: {
+        "Cache-Control": "private, max-age=300",
+        Vary: "Authorization",
+      },
     }
   );
 }

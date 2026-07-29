@@ -30,10 +30,15 @@ export async function GET(request: NextRequest) {
 
   // private: auth-gated and filtered per sucursalId (not CDN-safe)
   // max-age=300: matches the in-process cache TTL (src/lib/cache.ts)
+  // Vary: la lista depende del sucursalId del usuario autenticado; sin esto el
+  // caché del navegador puede servirle a un usuario la respuesta de otro.
   return Response.json(
     { actividades },
     {
-      headers: { "Cache-Control": "private, max-age=300" },
+      headers: {
+        "Cache-Control": "private, max-age=300",
+        Vary: "Authorization",
+      },
     }
   );
 }

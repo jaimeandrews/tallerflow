@@ -16,11 +16,16 @@
  * What to cache (TTL 5 min):
  *  ✓ actividades list per sucursal  → key: "actividades:{sucursalId|global}"
  *  ✓ especialidades list            → key: "especialidades"
- *  ✓ turnos list per sucursal       → key: "turnos:{sucursalId}"
  *
  * What NOT to cache (real-time or user-specific):
  *  ✗ marcajes, asignaciones, alertas, ordenes — always fresh from DB
  *  ✗ dashboard KPIs — depend on live marcaje data
+ *
+ * Nota: los turnos NO están cacheados. Las rutas de marcaje
+ * (iniciar / pausar / reanudar / cambiar-actividad) consultan el turno activo
+ * en cada request. Si se agrega caché de turnos, las rutas de
+ * /api/configuracion/turnos deben invalidarla, igual que hacen las de
+ * actividades.
  *
  * Invalidation: call invalidate(key) or invalidatePrefix(prefix) when
  * the underlying data changes (POST / PUT / PATCH / DELETE handlers).
@@ -112,7 +117,4 @@ export const CACHE_KEYS = {
 
   /** All active especialidades (global, no per-sucursal variant). */
   especialidades: "especialidades",
-
-  /** Active turnos for a given sucursal. */
-  turnos: (sucursalId: string) => `turnos:${sucursalId}`,
 } as const;

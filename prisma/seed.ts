@@ -60,6 +60,7 @@ async function main() {
     { nombre: "Reparación", color: "#2563EB", productiva: true, icono: "wrench" },
     { nombre: "Diagnóstico", color: "#7C3AED", productiva: true, icono: "search" },
     { nombre: "Garantía", color: "#059669", productiva: true, icono: "shield-check" },
+    { nombre: "Mantenimiento preventivo", color: "#14B8A6", productiva: true, icono: "gauge" },
     { nombre: "Espera repuesto", color: "#D97706", productiva: false, icono: "clock" },
     { nombre: "Aseo taller", color: "#6B7280", productiva: false, icono: "trash" },
     { nombre: "Reunión", color: "#0891B2", productiva: false, icono: "users" },

@@ -1,17 +1,52 @@
 "use client";
 
-import { Wrench, Search, Shield, Clock, Trash2, Users, Coffee, Zap } from "lucide-react";
+import {
+  Activity,
+  Clock,
+  Coffee,
+  Flag,
+  Gauge,
+  Hammer,
+  HardHat,
+  Layers,
+  Package,
+  Pause,
+  Search,
+  ShieldCheck,
+  Timer,
+  Trash2,
+  Truck,
+  Users,
+  Wrench,
+  Zap,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
+/** Debe cubrir todos los ids que ofrece Configuración (ver ICONOS en
+ *  seccion-actividades.tsx) más los que usa prisma/seed.ts. Si falta uno, la
+ *  actividad cae al icono por defecto y se ve idéntica a otras en el kiosco. */
 const ICON_MAP: Record<string, LucideIcon> = {
+  // Configuración
   wrench: Wrench,
-  search: Search,
-  "shield-check": Shield,
-  clock: Clock,
-  trash: Trash2,
-  users: Users,
+  hammer: Hammer,
+  activity: Activity,
+  gauge: Gauge,
+  layers: Layers,
+  "hard-hat": HardHat,
+  package: Package,
+  truck: Truck,
   coffee: Coffee,
+  pause: Pause,
+  users: Users,
+  flag: Flag,
+  zap: Zap,
+  timer: Timer,
+  clock: Clock,
+  // Seed
+  search: Search,
+  "shield-check": ShieldCheck,
+  trash: Trash2,
 };
 
 export interface ActividadItem {
@@ -44,7 +79,7 @@ export function ActividadGrid({ actividades, onSelect, dark = false }: Actividad
       </p>
       <div className="grid grid-cols-2 gap-2">
         {items.map((a) => {
-          const Icon = ICON_MAP[a.icono ?? ""] ?? Zap;
+          const Icon = ICON_MAP[a.icono ?? ""] ?? Wrench;
           return (
             <button
               key={a.id}

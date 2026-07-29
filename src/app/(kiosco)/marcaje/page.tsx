@@ -62,34 +62,6 @@ function PinScreen() {
   );
 }
 
-// ─── Quick Access Row ─────────────────────────────────────────────────────────
-
-interface QuickAccessProps {
-  actividades: ActividadItem[];
-  onSelect: (a: ActividadItem) => void;
-}
-
-function QuickAccess({ actividades, onSelect }: QuickAccessProps) {
-  const quick = actividades.slice(0, 4);
-  if (quick.length === 0) return null;
-  return (
-    <div className="grid grid-cols-4 gap-2">
-      {quick.map((a) => (
-        <button
-          key={a.id}
-          onClick={() => onSelect(a)}
-          className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all active:scale-95"
-        >
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
-          <span className="text-xs text-white/70 text-center leading-tight font-medium">
-            {a.nombre}
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 function Dashboard({
@@ -309,20 +281,25 @@ function Dashboard({
             </div>
           </div>
 
+          {/* Activities — siempre visibles, el técnico no debe abrir un panel
+              para marcar. Agrupadas en productivas / no productivas. */}
+          <div className="rounded-2xl p-4 border border-white/8 bg-[#111] flex-shrink-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">
+              Actividades
+            </p>
+            {actividades.length > 0 ? (
+              <ActividadGrid actividades={actividades} onSelect={handleSelectActividad} dark />
+            ) : (
+              <p className="text-white/30 text-sm">Cargando actividades…</p>
+            )}
+          </div>
+
           {/* History */}
           <div className="rounded-2xl p-4 border border-white/8 bg-[#111] flex-1 min-h-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">
               Marcajes hoy
             </p>
             <MarcajeTimeline marcajes={historial} totales={totales} dark />
-          </div>
-
-          {/* Quick access */}
-          <div className="rounded-2xl p-4 border border-white/8 bg-[#111] flex-shrink-0">
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">
-              Acceso rápido
-            </p>
-            <QuickAccess actividades={actividades} onSelect={handleSelectActividad} />
           </div>
         </div>
       </div>
